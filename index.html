@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Savings Calculator | Livotec Philippines</title>
+  <meta name="description" content="See how much your household could save by owning a Livotec water purifier instead of buying refills.">
+  <meta name="theme-color" content="#00B9AD">
+  <meta property="og:title" content="Livotec Savings Calculator">
+  <meta property="og:image" content="livotec-logo.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <header class="brand">
+      <img class="brand__logo" src="livotec-logo.png" alt="Livotec" width="720" height="124">
+      <p class="brand__title">Savings Calculator</p>
+    </header>
+
+    <form id="calculator" class="card" novalidate>
+      <div class="field">
+        <label for="members">Family members</label>
+        <div class="stepper">
+          <button type="button" class="stepper__btn" data-step="-1" aria-label="Remove one family member">−</button>
+          <input class="input" id="members" type="number" inputmode="numeric" min="1" max="50" step="1" aria-describedby="members-error">
+          <button type="button" class="stepper__btn" data-step="1" aria-label="Add one family member">+</button>
+        </div>
+        <p class="field__error" id="members-error"></p>
+      </div>
+
+      <div class="field">
+        <label for="refillPrice">Gallon refill price</label>
+        <div class="affix">
+          <span class="affix__sign" aria-hidden="true">₱</span>
+          <input class="input" id="refillPrice" type="number" inputmode="decimal" min="1" step="any" aria-describedby="refillPrice-error">
+        </div>
+        <p class="field__error" id="refillPrice-error"></p>
+      </div>
+
+      <div class="field">
+        <label for="product">Purifier model</label>
+        <select class="input select" id="product"></select>
+        <p class="notice" id="modelNotice" hidden>Filter prices for this model are not yet confirmed.</p>
+      </div>
+
+      <label class="check" for="includeMineral">
+        <input type="checkbox" id="includeMineral">
+        <span class="check__box" aria-hidden="true"></span>
+        <span>Include mineral filter</span>
+      </label>
+
+      <div class="field" id="mineralField" hidden>
+        <label for="mineralPrice">Mineral filter price</label>
+        <div class="affix">
+          <span class="affix__sign" aria-hidden="true">₱</span>
+          <input class="input" id="mineralPrice" type="number" inputmode="decimal" min="1" step="any" placeholder="Enter price" aria-describedby="mineralPrice-error">
+        </div>
+        <p class="field__error" id="mineralPrice-error"></p>
+      </div>
+    </form>
+
+    <section class="result" id="result" aria-live="polite" aria-labelledby="resultLabel">
+      <p class="result__label" id="resultLabel">Your potential savings</p>
+      <p class="result__figure" id="outSavings">—</p>
+      <p class="result__period" id="outPeriod">after 10 years</p>
+      <dl class="result__stats">
+        <div><dt>Break-even</dt><dd id="outBreakEven">—</dd></div>
+        <div><dt>Annual consumption</dt><dd id="outConsumption">—</dd></div>
+      </dl>
+      <p class="result__stale" id="resultStale" hidden>Complete the fields above to update.</p>
+    </section>
+
+    <section class="yearly" aria-labelledby="h-yearly">
+      <h2 id="h-yearly">Savings by year</h2>
+      <ol class="yearly__list" id="yearlyList"></ol>
+    </section>
+
+    <p class="disclaimer">Estimate based on 3 L per person per day. Actual savings may vary.</p>
+  </main>
+</body>
+</html>
