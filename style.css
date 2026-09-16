@@ -1,0 +1,132 @@
+/* Livotec Savings Calculator. Colors sampled from the official 2026 logo (#00B9AD). */
+:root {
+  --brand: #00B9AD;        /* logo teal: fills, accents */
+  --brand-deep: #00665F;   /* logo teal darkened: text and result card (passes contrast) */
+  --brand-ink: #004A45;
+  --brand-mist: #E6F7F5;
+  --brand-line: #CFE9E6;
+  --paper: #F4FAF9;
+  --surface: #FFFFFF;
+  --ink: #102A28;
+  --ink-2: #4E6664;
+  --loss: #A1433A;
+  --font: "Avenir Next", "Avenir", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font); font-size: 16px; line-height: 1.45;
+  font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+h2, p, dl, dd { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+.app {
+  max-width: 440px; margin: 0 auto;
+  padding: 24px max(16px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: grid; gap: 14px;
+}
+
+/* Brand */
+.brand { text-align: center; padding: 8px 0 6px; }
+.brand__logo { display: block; width: min(200px, 60%); height: auto; margin: 0 auto; }
+.brand__title { margin-top: 8px; font-size: 0.9375rem; font-weight: 500; color: var(--ink-2); letter-spacing: 0.01em; }
+
+/* Inputs card */
+.card {
+  background: var(--surface); border: 1px solid var(--brand-line); border-radius: 20px;
+  padding: 18px; display: grid; gap: 14px;
+}
+.field label { display: block; margin-bottom: 6px; font-size: 0.9375rem; font-weight: 600; }
+.input {
+  display: block; width: 100%; min-height: 52px; padding: 0 14px;
+  border: 1px solid var(--brand-line); border-radius: 12px; background: var(--surface);
+  font-size: 1.0625rem; -webkit-appearance: none; appearance: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(0, 185, 173, .22); }
+.input[aria-invalid="true"] { border-color: var(--loss); }
+input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.select {
+  padding-right: 44px; cursor: pointer; font-weight: 500;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2300665F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 16px center;
+}
+
+.affix { position: relative; }
+.affix__sign { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-2); pointer-events: none; }
+.affix .input { padding-left: 32px; }
+
+.stepper { display: grid; grid-template-columns: 52px minmax(0, 1fr) 52px; gap: 8px; }
+.stepper .input { text-align: center; font-size: 1.25rem; font-weight: 600; }
+.stepper__btn {
+  min-height: 52px; border: 1px solid var(--brand-line); border-radius: 12px;
+  background: var(--brand-mist); color: var(--brand-deep);
+  font-size: 1.5rem; line-height: 1; cursor: pointer; touch-action: manipulation;
+}
+.stepper__btn:active { background: var(--brand-line); }
+
+.field__error { margin-top: 6px; font-size: 0.8125rem; color: var(--loss); }
+.field__error:empty { display: none; }
+.notice { margin-top: 8px; font-size: 0.8125rem; color: #6A4A12; }
+
+/* Checkbox */
+.check { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; font-weight: 500; cursor: pointer; }
+.check input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.check__box {
+  flex: none; width: 26px; height: 26px; border-radius: 7px;
+  border: 2px solid var(--brand-line); background: var(--surface);
+  display: grid; place-items: center; transition: background .15s, border-color .15s;
+}
+.check__box::after {
+  content: ""; width: 7px; height: 13px; margin-top: -3px;
+  border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); opacity: 0;
+}
+.check input:checked + .check__box { background: var(--brand); border-color: var(--brand); }
+.check input:checked + .check__box::after { opacity: 1; }
+.check input:focus-visible + .check__box { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+/* Result */
+.result {
+  position: relative; overflow: hidden;
+  background: var(--brand-deep); color: #fff; border-radius: 20px;
+  padding: 22px 20px 18px; text-align: center;
+}
+/* Echo of the logo's water rings */
+.result::before {
+  content: ""; position: absolute; width: 260px; height: 260px; right: -90px; top: -110px;
+  border-radius: 50%; border: 28px solid rgba(0, 185, 173, .28); pointer-events: none;
+}
+.result > * { position: relative; }
+.result__label { font-size: 1rem; color: #CDEFEC; }
+.result__figure { margin-top: 4px; font-size: clamp(2.5rem, 12vw, 3.25rem); line-height: 1.05; font-weight: 700; letter-spacing: -0.02em; }
+.result__period { margin-top: 2px; font-size: 0.9375rem; color: #CDEFEC; }
+.result__stats { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, .2); display: grid; gap: 8px; text-align: left; }
+.result__stats div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.result__stats dt { font-size: 0.875rem; color: #CDEFEC; }
+.result__stats dd { font-weight: 700; white-space: nowrap; }
+.result.is-stale .result__figure, .result.is-stale .result__stats { opacity: .4; }
+.result__stale { margin-top: 12px; font-size: 0.875rem; color: #FFE1DC; }
+
+/* Yearly list */
+.yearly h2 { margin: 6px 2px 10px; font-size: 1.0625rem; font-weight: 700; }
+.yearly__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.yearly__list li {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  min-height: 40px; padding: 0 14px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--brand-line); font-size: 0.9375rem;
+}
+.yearly__list .year { color: var(--ink-2); }
+.yearly__list .amt { font-weight: 600; color: var(--brand-deep); }
+.yearly__list .amt.is-neg { color: var(--loss); }
+.yearly__list li.is-breakeven { background: var(--brand-mist); border-color: var(--brand); }
+
+.disclaimer { text-align: center; font-size: 0.75rem; color: var(--ink-2); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
