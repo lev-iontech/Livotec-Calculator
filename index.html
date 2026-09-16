@@ -60,20 +60,22 @@
       </div>
     </form>
 
-    <section class="result" id="result" aria-live="polite" aria-labelledby="resultLabel">
+    <section class="result" id="result" aria-labelledby="resultLabel">
       <p class="result__label" id="resultLabel">Your potential savings</p>
       <p class="result__figure" id="outSavings">—</p>
       <p class="result__period" id="outPeriod">after 10 years</p>
+
+      <div class="years">
+        <div class="years__track" id="yearTrack" role="group" aria-label="Choose a year. Use left and right arrow keys." tabindex="0"></div>
+      </div>
+      <p class="years__hint">Swipe left or right to see each year</p>
+
       <dl class="result__stats">
         <div><dt>Break-even</dt><dd id="outBreakEven">—</dd></div>
         <div><dt>Annual consumption</dt><dd id="outConsumption">—</dd></div>
       </dl>
       <p class="result__stale" id="resultStale" hidden>Complete the fields above to update.</p>
-    </section>
-
-    <section class="yearly" aria-labelledby="h-yearly">
-      <h2 id="h-yearly">Savings by year</h2>
-      <ol class="yearly__list" id="yearlyList"></ol>
+      <p class="sr-only" id="liveRegion" aria-live="polite"></p>
     </section>
 
     <p class="disclaimer">Estimate based on 3 L per person per day. Actual savings may vary.</p>

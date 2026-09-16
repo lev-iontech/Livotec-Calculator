@@ -290,10 +290,14 @@
       includeMineral: $('includeMineral'), mineralPrice: $('mineralPrice'), mineralField: $('mineralField'),
       modelNotice: $('modelNotice'), result: $('result'), resultLabel: $('resultLabel'), resultStale: $('resultStale'),
       outSavings: $('outSavings'), outPeriod: $('outPeriod'), outBreakEven: $('outBreakEven'),
-      outConsumption: $('outConsumption'), yearlyList: $('yearlyList')
+      outConsumption: $('outConsumption'), yearTrack: $('yearTrack'), liveRegion: $('liveRegion')
     };
     var products = LOCAL_PRODUCTS.slice();
     var touched = {};
+    var lastResult = null;                          // latest valid calculation
+    var selectedYear = DEFAULTS.projectionYears;    // year centered in the scroller
+    var announceTimer = null;
+    var scrollFrame = 0;
 
     function getProduct(id) {
       for (var i = 0; i < products.length; i++) if (products[i].id === id) return products[i];
@@ -344,23 +348,93 @@
       });
     }
 
+    /* ---- Year scroller ---- */
+    function yearsText(n) { return n === 1 ? '1 year' : n + ' years'; }
+
+    function buildChips(count) {
+      if (els.yearTrack.children.length === count) return;
+      els.yearTrack.innerHTML = '';
+      for (var y = 1; y <= count; y++) {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'year-chip';
+        chip.setAttribute('data-year', y);
+        chip.innerHTML = '<span class="year-chip__year">Year ' + y + '</span><span class="year-chip__amt">—</span>';
+        els.yearTrack.appendChild(chip);
+      }
+    }
+
+    // Shows cumulative savings as of the given year in the result card.
+    function showYear(year) {
+      if (!lastResult) return;
+      var rows = lastResult.rows;
+      year = Math.min(rows.length, Math.max(1, year));
+      selectedYear = year;
+      var cum = rows[year - 1].cumulative;
+      var recovered = Math.round(cum) >= 0;
+
+      els.resultLabel.textContent = recovered ? 'Your potential savings' : 'Still to recover';
+      els.outSavings.textContent = peso(Math.abs(cum));
+      els.outPeriod.textContent = 'after ' + yearsText(year);
+
+      Array.prototype.forEach.call(els.yearTrack.children, function (chip) {
+        var active = Number(chip.getAttribute('data-year')) === year;
+        chip.classList.toggle('is-active', active);
+        if (active) chip.setAttribute('aria-current', 'true'); else chip.removeAttribute('aria-current');
+      });
+
+      // Announce once scrolling settles, not on every frame.
+      clearTimeout(announceTimer);
+      announceTimer = setTimeout(function () {
+        els.liveRegion.textContent = (recovered ? 'Potential savings ' : 'Still to recover ') + peso(Math.abs(cum)) + ' after ' + yearsText(year);
+      }, 450);
+    }
+
+    function nearestYear() {
+      var track = els.yearTrack;
+      var center = track.getBoundingClientRect().left + track.clientWidth / 2;
+      var best = selectedYear, bestDist = Infinity;
+      Array.prototype.forEach.call(track.children, function (chip) {
+        var r = chip.getBoundingClientRect();
+        var d = Math.abs(r.left + r.width / 2 - center);
+        if (d < bestDist) { bestDist = d; best = Number(chip.getAttribute('data-year')); }
+      });
+      return best;
+    }
+
+    function scrollToYear(year, instant) {
+      var chip = els.yearTrack.children[year - 1];
+      if (!chip) return;
+      var track = els.yearTrack;
+      var target = chip.offsetLeft - track.offsetLeft - (track.clientWidth - chip.offsetWidth) / 2;
+      if (instant) {
+        track.style.scrollBehavior = 'auto';
+        track.scrollLeft = target;
+        track.style.scrollBehavior = '';
+      } else {
+        track.scrollTo({ left: target, behavior: 'smooth' });
+      }
+    }
+
     function render(result, state) {
       var n = state.projectionYears;
-      var total = result.totals.savings;
-      var gain = Math.round(total) >= 0;
+      lastResult = result;
+      buildChips(result.rows.length);
 
-      els.resultLabel.textContent = gain ? 'Your potential savings' : 'Estimated extra cost';
-      els.outSavings.textContent = peso(Math.abs(total));
-      els.outPeriod.textContent = 'after ' + n + ' years';
       els.outBreakEven.textContent = result.breakEvenYear ? 'Year ' + result.breakEvenYear : 'Not within ' + n + ' years';
       els.outConsumption.textContent = numberFmt.format(result.annualLiters) + ' L';
 
-      // Each row shows total (cumulative) savings as of that year.
-      els.yearlyList.innerHTML = result.rows.map(function (r) {
-        var cls = r.year === result.breakEvenYear ? ' class="is-breakeven"' : '';
-        var amtCls = Math.round(r.cumulative) < 0 ? 'amt is-neg' : 'amt';
-        return '<li' + cls + '><span class="year">Year ' + r.year + '</span><span class="' + amtCls + '">' + peso(r.cumulative) + '</span></li>';
-      }).join('');
+      result.rows.forEach(function (r, i) {
+        var chip = els.yearTrack.children[i];
+        var amt = chip.lastChild;
+        amt.textContent = peso(r.cumulative);
+        amt.classList.toggle('is-neg', Math.round(r.cumulative) < 0);
+        chip.classList.toggle('is-breakeven', r.year === result.breakEvenYear);
+        chip.setAttribute('aria-label', 'Year ' + r.year + ', total savings ' + peso(r.cumulative) +
+          (r.year === result.breakEvenYear ? ', break-even year' : ''));
+      });
+
+      showYear(selectedYear);
     }
 
     function update() {
@@ -398,9 +472,44 @@
       });
     });
 
+    // Recalculate the headline on every scroll frame while swiping left or right.
+    els.yearTrack.addEventListener('scroll', function () {
+      cancelAnimationFrame(scrollFrame);
+      scrollFrame = requestAnimationFrame(function () {
+        var year = nearestYear();
+        if (year !== selectedYear) showYear(year);
+      });
+    }, { passive: true });
+
+    els.yearTrack.addEventListener('click', function (e) {
+      var chip = e.target.closest('.year-chip');
+      if (chip) scrollToYear(Number(chip.getAttribute('data-year')));
+    });
+
+    els.yearTrack.addEventListener('keydown', function (e) {
+      if (!lastResult) return;
+      var map = { ArrowLeft: -1, ArrowRight: 1 };
+      var next = null;
+      if (map[e.key]) next = selectedYear + map[e.key];
+      else if (e.key === 'Home') next = 1;
+      else if (e.key === 'End') next = lastResult.rows.length;
+      if (next === null) return;
+      e.preventDefault();
+      next = Math.min(lastResult.rows.length, Math.max(1, next));
+      showYear(next);
+      scrollToYear(next);
+    });
+
+    // Keep the selected year centered if the card width changes (rotation, resize).
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(function () { scrollToYear(selectedYear, true); }).observe(els.yearTrack);
+    }
+
     populateProducts(DEFAULTS.productId);
     applyDefaults();
     update();
+    // Start on the final year (full projection), centered.
+    requestAnimationFrame(function () { scrollToYear(selectedYear, true); });
 
     loadRemoteProducts().then(function (list) {
       if (!list) return;
