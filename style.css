@@ -74,6 +74,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 
 .field__error { margin-top: 6px; font-size: 0.8125rem; color: var(--loss); }
 .field__error:empty { display: none; }
+.field__note { margin-top: 8px; font-size: 0.8125rem; color: var(--brand-deep); }
 .notice { margin-top: 8px; font-size: 0.8125rem; color: #6A4A12; }
 
 /* Checkbox */

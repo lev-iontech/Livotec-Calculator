@@ -24,7 +24,11 @@
       { key: 'roMembrane',    label: 'RO membrane',    lifespanL: 30000, optional: false, userPriced: false },
       { key: 'mineralFilter', label: 'Mineral filter', lifespanL: 10000, optional: true,  userPriced: true  }
     ],
-    projectionOptions: [5, 10]
+    projectionOptions: [5, 10],
+    // One-time cost of a regular water dispenser, added to the refill side (Year 1)
+    // for models flagged replacesDispenser. Those purifiers dispense water themselves,
+    // so a refill household would need to buy a dispenser to compare like for like.
+    dispenserCost: 8000
   };
 
   /* ------------------------------------------------------------------------
@@ -49,21 +53,23 @@
      Only PureLite 10 Hydrogen (U05) filter prices were supplied. The other
      models carry U05 filter prices as PLACEHOLDERS until real prices are set.
      mineralFilter: null means "no default"; the user enters it on screen.
+     replacesDispenser: true adds CONFIG.dispenserCost to the refill side in Year 1
+     (VitaGlow and FlexTemp series). PureLite series: false.
      ------------------------------------------------------------------------ */
   var LOCAL_PRODUCTS = [
-    { id: 'U05', name: 'PureLite 10 Hydrogen', price: 19990, filtersConfirmed: true,
+    { id: 'U05', name: 'PureLite 10 Hydrogen', replacesDispenser: false, price: 19990, filtersConfirmed: true,
       filters: { prefilter: 2535, roMembrane: 4140, mineralFilter: null }, lifespans: {} },
-    { id: 'purelite-10-smart', name: 'PureLite 10 Smart', price: 26990, filtersConfirmed: false,
+    { id: 'purelite-10-smart', name: 'PureLite 10 Smart', replacesDispenser: false, price: 26990, filtersConfirmed: false,
       filters: { prefilter: 2535, roMembrane: 4140, mineralFilter: null }, lifespans: {} },
-    { id: 'vitaglow-11', name: 'VitaGlow 11', price: 27990, filtersConfirmed: false,
+    { id: 'vitaglow-11', name: 'VitaGlow 11', replacesDispenser: true, price: 27990, filtersConfirmed: false,
       filters: { prefilter: 2535, roMembrane: 4140, mineralFilter: null }, lifespans: {} },
-    { id: 'flextemp-10-edge', name: 'FlexTemp 10 Edge', price: 37990, filtersConfirmed: false,
+    { id: 'flextemp-10-edge', name: 'FlexTemp 10 Edge', replacesDispenser: true, price: 37990, filtersConfirmed: false,
       filters: { prefilter: 2535, roMembrane: 4140, mineralFilter: null }, lifespans: {} },
-    { id: 'flextemp-10-cozy', name: 'FlexTemp 10 Cozy', price: 38990, filtersConfirmed: false,
+    { id: 'flextemp-10-cozy', name: 'FlexTemp 10 Cozy', replacesDispenser: true, price: 38990, filtersConfirmed: false,
       filters: { prefilter: 2535, roMembrane: 4140, mineralFilter: null }, lifespans: {} },
-    { id: 'flextemp-10-sense', name: 'FlexTemp 10 Sense', price: 48990, filtersConfirmed: false,
+    { id: 'flextemp-10-sense', name: 'FlexTemp 10 Sense', replacesDispenser: true, price: 48990, filtersConfirmed: false,
       filters: { prefilter: 2535, roMembrane: 4140, mineralFilter: null }, lifespans: {} },
-    { id: 'vitaglow-11-ultra', name: 'VitaGlow 11 Ultra', price: 51990, filtersConfirmed: false,
+    { id: 'vitaglow-11-ultra', name: 'VitaGlow 11 Ultra', replacesDispenser: true, price: 51990, filtersConfirmed: false,
       filters: { prefilter: 2535, roMembrane: 4140, mineralFilter: null }, lifespans: {} }
   ];
 
@@ -73,7 +79,7 @@
      request fails / the device is offline, LOCAL_PRODUCTS is used.
      Expected JSON: { "products": [ { id, name, price, prefilter, roMembrane,
        mineralFilter, prefilterLifespanL, roMembraneLifespanL,
-       mineralFilterLifespanL, filtersConfirmed, active } ] }
+       mineralFilterLifespanL, filtersConfirmed, replacesDispenser, active } ] }
      ------------------------------------------------------------------------ */
   var DATA_SOURCE = {
     productsUrl: '',
@@ -101,6 +107,7 @@
           name: String(r.name || '').trim(),
           price: toNumber(r.price),
           filtersConfirmed: isTrue(r.filtersConfirmed),
+          replacesDispenser: isTrue(r.replacesDispenser),
           filters: {
             prefilter: toNumber(r.prefilter),
             roMembrane: toNumber(r.roMembrane),
@@ -166,6 +173,8 @@
     // Rounded per year so every table row reconciles to the peso.
     var annualRefillCost = Math.round(annualGallons * inputs.refillPrice);
     var containerCost = Math.round(inputs.initialContainers * inputs.containerPrice);
+    var dispenserCost = product.replacesDispenser ? Math.round(config.dispenserCost || 0) : 0;
+    var oneTimeRefillCost = containerCost + dispenserCost;
 
     // The first set of filters ships with the purifier; only replacements are charged.
     var activeFilters = config.filters
@@ -199,7 +208,8 @@
         }
       });
 
-      var traditional = annualRefillCost + (year === 1 ? containerCost : 0);
+      // Year 1 refill side: containers + dispenser (if applicable) + refills.
+      var traditional = annualRefillCost + (year === 1 ? oneTimeRefillCost : 0);
       var livotec = (year === 1 ? product.price : 0) + filterCost;
       var savings = traditional - livotec;
       cumulative += savings;
@@ -233,6 +243,7 @@
       annualGallons: annualGallons,
       annualRefillCost: annualRefillCost,
       containerCost: containerCost,
+      dispenserCost: dispenserCost,
       activeFilters: activeFilters,
       rows: rows,
       totals: totals,
@@ -288,7 +299,7 @@
     var els = {
       members: $('members'), refillPrice: $('refillPrice'), product: $('product'),
       includeMineral: $('includeMineral'), mineralPrice: $('mineralPrice'), mineralField: $('mineralField'),
-      modelNotice: $('modelNotice'), result: $('result'), resultLabel: $('resultLabel'), resultStale: $('resultStale'),
+      modelNotice: $('modelNotice'), dispenserNote: $('dispenserNote'), result: $('result'), resultLabel: $('resultLabel'), resultStale: $('resultStale'),
       outSavings: $('outSavings'), outPeriod: $('outPeriod'), outBreakEven: $('outBreakEven'),
       outConsumption: $('outConsumption'), yearTrack: $('yearTrack'), liveRegion: $('liveRegion')
     };
@@ -442,6 +453,8 @@
       var product = getProduct(read.state.productId);
       els.mineralField.hidden = !read.state.includeMineral;
       els.modelNotice.hidden = product.filtersConfirmed;
+      els.dispenserNote.hidden = !product.replacesDispenser;
+      els.dispenserNote.textContent = 'Refill cost includes a ' + peso(CONFIG.dispenserCost) + ' water dispenser, since this model dispenses water.';
       showErrors(read.errors);
 
       var valid = Object.keys(read.errors).length === 0;
